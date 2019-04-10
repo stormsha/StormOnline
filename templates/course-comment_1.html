@@ -1,0 +1,316 @@
+{% extends 'base.html' %}
+{% block title %} 公开课评论 - 慕学在线网 {% endblock %}
+{% load staticfiles %}
+{% block custum_bread %}
+     <section>
+        <div class="wp">
+            <div class="crumbs">
+                <ul>
+                    <li><a href="{% url 'index' %}">首页</a>></li>
+                    <li><a href="{% url 'course:course_list' %}">课程详情</a>></li>
+                    <li>会员评论区</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+{% endblock %}
+
+{% block custom_css %}
+    <link rel="stylesheet" type="text/css" href="{% static 'css/muke/course/learn-less.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'css/muke/course/course-comment.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'css/muke/base.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/muke/common-less.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/muke/course/common-less.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/mooc.css' %}" />
+{% endblock %}
+{% block content %}
+        <div id="main">
+       <div class="course-infos">
+        <div class="w pr">
+            <div style="height: 15px" class="path">
+            </div>
+            <div class="hd">
+                <h2 class="l">{{ course.name }}</h2>
+            </div>
+            <div class="statics clearfix">
+                <div class="static-item ">
+                    <span class="meta-value"><strong>{{ course.get_degree_display }}</strong></span>
+                    <span class="meta">难度</span>
+                    <em></em>
+                </div>
+                <div class="static-item static-time">
+                    <span class="meta-value">{{ course.learn_times }}分钟</span>
+                    <span class="meta">时长</span>
+                    <em></em>
+                </div>
+                <div class="static-item">
+                    <span class="meta-value"><strong>{{ course.students }}</strong></span>
+                    <span class="meta">学习人数</span>
+                    <em></em>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="course-info-main clearfix w has-progress">
+
+        <div class="info-bar clearfix">
+            <div class="content-wrap clearfix">
+                <div class="content">
+                    <div class="mod-tab-menu">
+                        <ul class="course-menu clearfix">
+                            <li><a id="commentOn" class="active" href="{% url 'course:course_comment' course.id %}"><span>会员评论区({{ comment_count }}条)</span></a></li>
+                        </ul>
+                    </div>
+
+
+                    <!--评论区-->
+                    <div class="issques clearfix js-form">
+                        <div class="comment-area">
+                            {% if request.user.is_authenticated %}
+                                <form id="comment_form" action="{% url 'course:add_comment' %}" method="POST">
+                                    {% csrf_token %}
+                                    <label>{{ user.username }},欢迎评论~~~</label>
+                                    <div id="reply_content_container" style="display: none">
+                                        <p>回复：</p>
+                                        <div id="reply_content"></div>
+                                    </div>
+                                    {% for field in comment_form %}
+                                        {{ field }}
+                                    {% endfor %}
+                                    <span id="comment_error" class="text-danger pull-left"></span>
+                                    <input type="submit" value="评论" class="pub-btn" >
+                                </form>
+                            {% else %}
+                                未登陆
+                            {% endif %}
+                        </div>
+                        <div class="comment-area">
+                            <h3 class="comment-area-title" style="border-bottom: dashed crimson 1px">评论列表区</h3>
+                            <ul class="mod-post" id="comment-list" style="margin-top: 10px">
+                                {% for comment in all_comments %}
+                                    <div class="comment_block" id="root_{{ comment.pk }}" style="margin-top: 10px">
+                                            <img align="left" src="{{ MEDIA_URL }}{{ comment.user.image.name }}" width="40" height="40" />
+                                            <span style="color: #298!important;display: block;margin-left: 60px">{{ comment.user.username }}</span>
+                                            <span style="margin-left: 20px">{{ comment.add_time|date:"Y-m-d H:i:s" }}：</span>
+
+                                        <div style="margin-left: 60px" id="comment_{{ comment.pk }}">
+                                            {{ comment.text|safe }}
+                                        </div>
+                                        <a href="javascript:reply({{ comment.pk }});" style="color: #006b9c;">回复</a>
+                                        <a href="" style="margin-left: 15px;color: #006b9c">赞(10)</a>
+                                        <a href="" style="margin-left: 15px;color: #006b9c">踩(2)</a>
+
+                                        {% for reply in comment.root_comment.all %}
+                                            <div class="reply" style="margin-top: 20px">
+                                                <img src="{{ MEDIA_URL }}{{ reply.user.image.name }}" width="20" height="20" />
+                                                <span style="color: #298!important;margin-left: 10px;">{{ reply.user.username }}</span>
+                                                <span>({{ reply.add_time|date:"Y-m-d H:i:s" }})</span>
+                                                <span>回复 @</span>
+                                                <span>{{ reply.reply_to.username }}: </span>
+                                                <div style="margin-left: 40px" id="comment_{{ reply.pk }}">
+                                                    {{ reply.text|safe }}
+                                                </div>
+                                                <a href="javascript:reply({{ reply.pk }});" style="color: #006b9c;">回复</a>
+                                                <a href="" style="margin-left: 15px;color: #006b9c">赞(10)</a>
+                                                <a href="" style="margin-left: 15px;color: #006b9c">踩(2)</a>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% empty %}
+                                    <span id="no_comment">暂无评论</span>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="aside r">
+                    <div class="bd">
+
+                    <div class="box mb40">
+                        <h4>资料下载</h4>
+                        <ul class="downlist">
+                            {% for course_resource in course_resources %}
+                                <li>
+                                    <span ><i class="aui-iconfont aui-icon-file"></i>&nbsp;&nbsp;{{ course_resource.name }}</span>
+                                    <a href="{{ MEDIA_URL }}{{ course_resource.download }}" class="downcode" target="_blank" download="" data-id="274" title="">下载</a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <div class="box mb40">
+                        <h4>讲师提示</h4>
+                        <div class="teacher-info">
+                            <a href="/u/315464/courses?sort=publish" target="_blank">
+                                <img src='{{ MEDIA_URL }}{{ course.teacher.image }}' width='80' height='80' />
+                            </a>
+        <span class="tit">
+          <a href="/u/315464/courses?sort=publish" target="_blank">{{ course.teacher.name }}</a>
+        </span>
+                            <span class="job">{{ course.teacher.work_position }}</span>
+                        </div>
+                        <div class="course-info-tip">
+                            <dl class="first">
+                                <dt>课程须知</dt>
+                                <dd class="autowrap">{{ course.you_know }}</dd>
+                            </dl>
+                            <dl>
+                                <dt>老师告诉你能学到什么？</dt>
+                                <dd class="autowrap">{{ course.teacher_tell }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+
+
+                        <div class="cp-other-learned  js-comp-tabs">
+                            <div class="cp-header clearfix">
+                                <h2 class="cp-tit l">该课的同学还学过</h2>
+                            </div>
+                            <div class="cp-body">
+                                <div class="cp-tab-pannel js-comp-tab-pannel" data-pannel="course" style="display: block">
+                                    <!-- img 200 x 112 -->
+                                    <ul class="other-list">
+                                        {% for relate_course in relate_courses%}
+                                        <li class="curr">
+                                        <a href="{% url 'course:course_detail' relate_course.id %}" target="_blank">
+                                            <img src="{{ MEDIA_URL }}{{ relate_course.image }}" alt="django与vuejs实战项目2">
+                                            <span class="name autowrap">{{ relate_course.name }}</span>
+                                        </a>
+                                    </li>
+                                    {% endfor %}
+                                    </ul>
+                                </div>
+                                <div class="cp-tab-pannel js-comp-tab-pannel" data-pannel="plan">
+                                    <ul class="other-list">
+                                        <li class="curr">
+                                            <a href="/course/programdetail/pid/31?src=sug" target="_blank">
+                                                <img src="http://img.mukewang.com/56551e6700018b0c09600720-240-135.jpg" alt="Java工程师">
+                                                <span class="name autowrap">Java工程师</span>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>    </div>
+            </div>
+            <div class="clear"></div>
+
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+{% block custom_js %}
+<script type="text/javascript">
+    function reply(reply_comment_id) {
+        //设置值
+        $('#reply_comment_id').val(reply_comment_id);
+        var html = $("#comment_" + reply_comment_id).html();
+        $('#reply_content').html(html);
+        $('#reply_content_container').show();
+
+        //滚动到评论框
+        $('html').animate({scrollTop: $('#comment_form').offset().top -60}, 300, function () {
+            CKEDITOR.instances['id_text'].focus();
+        });
+    }
+    $("#comment_form").submit(function(){
+        //判断是否为空
+        $("#comment_error").text('');
+        if(CKEDITOR.instances['id_text'].document.getBody().getText().trim()==''){
+            $("#comment_error").text('评论内容不能为空');
+            return false;
+        }
+        //更新数据到textarea
+        CKEDITOR.instances['id_text'].updateElement();
+        //异步提交
+        $.ajax({
+            url: "{% url 'course:add_comment' %}",
+            type: 'POST',
+            data: $(this).serialize(),
+            //不需要缓存
+            cache: false,
+            success: function(data){
+                console.log(data);
+                if(data['status']=="SUCCESS"){
+                    if($('#reply_comment_id').val()=='0'){
+                        //插入评论
+                        var comment_html = '<div class="comment_block" id="root_ ' + data['pk'] + ' "> <span><img src="{{ MEDIA_URL }}' + data['image_url'] + ' " width="40" height="40" /></span> <span style="color: #298!important;"> ' + data['username'] + ' </span><span> ( ' + data['comment_time'] + ' ): </span> <div id="comment_ ' + data['pk'] + ' "> ' + data['text'] + ' </div> <a href="javascript:reply(' + data['pk'] + ');" style="color: blue">回复</a></div>';
+                        $("#comment-list").prepend(comment_html);
+                    }else{
+                        //插入回复
+                        {#var reply_html = '<div class="reply"> <span> ' + data['username'] + ' </span><span> ( ' + data['comment_time'] + ' ) </span><span>回复 @</span><span> ' + data['reply_to'] + ' : </span><div id="comment_ ' + data['pk'] + ' "> ' + data['text'] + ' </div><a href="javascript:reply( ' + data['pk'] + ' );">回复</a></div>';#}
+                        var reply_html ='<div class="reply"> <span><img src="{{ MEDIA_URL }}' + data['reply_to_image'] + ' " width="20" height="20" /></span> <span style="color: #298!important;">' + data['username'] + '</span><span> (' + data['comment_time'] + ')</span><span> 回复 @ </span><span>' + data['reply_to'] + '：</span><div id="comment_' + data['pk'] + '">' + data['text'] + '</div><a href="javascript:reply(' + data['pk'] + ');" style="color: blue">回复</a></div>';
+                        $("#root_" + data['root_pk']).append(reply_html);
+                    }
+                    //清空编辑框
+                    CKEDITOR.instances['id_text'].setData('');
+                    $('#reply_content_container').hide();
+                    $('#reply_comment_id').val('0');
+                    $('#no_comment').remove();
+                }else {
+                    $("#comment_error").text(data['message']);
+                }
+            },
+            error: function(xhr){
+                console.log(xhr);
+            },
+        });
+        return false;
+    });
+
+</script>
+<script type="text/javascript" src="{% static "ckeditor/ckeditor-init.js" %}"></script>
+<script type="text/javascript" src="{% static "ckeditor/ckeditor/ckeditor.js" %}"></script>
+<!--<script type="text/javascript">
+$("#comment_submit").click(function(){
+    //检查数据
+    if(!check_data()) return false;
+
+    //.tip_text是一个span标签，用于显示提示内容
+    $('.tip-text').text('发表评论中...');
+
+    //把UEditor内容写入hidden中
+    var ue = UE.getEditor('editor');
+    $('#comment').val(ue.getContent());
+
+    //ajax提交表单
+    $.ajax({
+    type: "POST",
+    data:$("#comment_form").serialize(),
+    url: "{% url 'course:add_comment' %}",
+    cache: false,
+    dataType: "json",
+    success: function(json, textStatus) {
+        if(json['success']){
+            //跳转页面
+            $('.tip-text').text('成功发表评论');
+            var url = json['message'];
+            window.location.href = url;
+        }else{
+            //显示错误信息
+            $('.tip-text').text('发表评论出错：'+json['message']);
+        }
+    },
+    error: function (XMLHttpRequest, textStatus, errorThrown) {
+        $('.tip-text').text('发表评论出错，请检查或稍后再试');
+    }
+});
+});
+
+//检查数据
+function check_data(){
+    $('.tip-text').text('');
+    //内容
+    if (!UE.getEditor('editor').hasContents()){
+        $('.tip-text').text('尚未写入任何评论内容');
+        return false;
+    }
+    return true;
+}
+</script>-->
+{% endblock %}
+
+
